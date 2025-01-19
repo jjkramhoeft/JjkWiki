@@ -112,7 +112,7 @@ else if (action == Action.insertPageInfo)
 }
 else if (action == Action.cleanPages)
 {
-    Console.WriteLine("Testing");
+    Console.WriteLine("Cleaning Pages");
 
     Stopwatch clockReadDb = new();
     clockReadDb.Start();
@@ -168,8 +168,8 @@ else if (action == Action.cleanPages)
     clockJoin.Stop();
     Console.WriteLine($"Joined {result.Count} together and sorted in {(int)clockJoin.Elapsed.TotalSeconds}(s)");
 
-    store.TruncateCleanedPages();
-    store.Vacuum();
+    //store.TruncateCleanedPages();
+    //store.Vacuum();
 
     int count = 0;
     var dump = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream.xml.bz2";
@@ -204,7 +204,7 @@ else if (action == Action.cleanPages)
                 clockClean.Stop();
                 chunckOfPages.Add(new(pageInfo.PageId, text2));
                 count++;
-                if (count % 100 == 0)
+                if (count % 1000 == 0)
                 {
                     store.InsertCleanedPages(chunckOfPages);
                     chunckOfPages = [];
@@ -820,7 +820,7 @@ string RemoveLinks(string text, string start, string end, char sep)
             int fittingSep = -1;
             foreach (var aSep in seps)
             {
-                if (removabels[count].Item1 < aSep && aSep < removabels[count].Item2)
+                if (removabels[count].Item1+2 < aSep && aSep < removabels[count].Item2)
                     fittingSep = aSep;
                 break;
             }
@@ -834,11 +834,14 @@ string RemoveLinks(string text, string start, string end, char sep)
             int linkToKeepEnd = fittingSep - 1;
             if (linkToKeepEnd < linkToKeepStart)
             {
-                throw new Exception("Messed up link");
+                //skip
             }
-            for (int l = linkToKeepStart; l <= linkToKeepEnd; l++)
+            else
             {
-                sb.Append(chars[l]);
+                for (int l = linkToKeepStart; l <= linkToKeepEnd; l++)
+                {
+                    sb.Append(chars[l]);
+                }
             }
             //jump to end and continue
             i = removabels[count].Item2;

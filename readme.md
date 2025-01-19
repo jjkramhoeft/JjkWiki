@@ -1,6 +1,6 @@
 # JJK Private Wikipedia
 
-My (Jens Jakob Kramhøft) experiment with a personal encyclopedia with search powered by LLM embeds.
+My (Jens Jakob Kramhøft) experiment with a personal encyclopedia with search powered by LLM embedings
 
 Wikipedia dump files are not included in GitHub
 
@@ -23,7 +23,7 @@ The full English monthly xml dump of filewikipedia will be trimmed, cleaned and 
 * Age: (pageId:dayNumber:used) (int,int,bit) A micro subset of dumpfile
 * Embedding: (embedding,pageId,type) (vector256,int,byte)
 
-### JJK BD (SQLite)
+### JJK DB (SQLite)
 
 * Text (pageId:text)
 
