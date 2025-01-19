@@ -310,6 +310,19 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
+      "SharpZipLib/1.4.2": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/ICSharpCode.SharpZipLib.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/ICSharpCode.SharpZipLib.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
       "SQLitePCLRaw.bundle_e_sqlite3/2.1.10": {
         "type": "package",
         "dependencies": {
@@ -1016,6 +1029,27 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "SharpZipLib/1.4.2": {
+      "sha512": "yjj+3zgz8zgXpiiC3ZdF/iyTBbz2fFvMxZFEBPUcwZjIvXOf37Ylm+K58hqMfIBt5JgU/Z2uoUS67JmTLe973A==",
+      "type": "package",
+      "path": "sharpziplib/1.4.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "images/sharpziplib-nuget-256x256.png",
+        "lib/net6.0/ICSharpCode.SharpZipLib.dll",
+        "lib/net6.0/ICSharpCode.SharpZipLib.pdb",
+        "lib/net6.0/ICSharpCode.SharpZipLib.xml",
+        "lib/netstandard2.0/ICSharpCode.SharpZipLib.dll",
+        "lib/netstandard2.0/ICSharpCode.SharpZipLib.pdb",
+        "lib/netstandard2.0/ICSharpCode.SharpZipLib.xml",
+        "lib/netstandard2.1/ICSharpCode.SharpZipLib.dll",
+        "lib/netstandard2.1/ICSharpCode.SharpZipLib.pdb",
+        "lib/netstandard2.1/ICSharpCode.SharpZipLib.xml",
+        "sharpziplib.1.4.2.nupkg.sha512",
+        "sharpziplib.nuspec"
+      ]
+    },
     "SQLitePCLRaw.bundle_e_sqlite3/2.1.10": {
       "sha512": "UxWuisvZ3uVcVOLJQv7urM/JiQH+v3TmaJc1BLKl5Dxfm/nTzTUrqswCqg/INiYLi61AXnHo1M1JPmPqqLnAdg==",
       "type": "package",
@@ -1306,6 +1340,7 @@
   "projectFileDependencyGroups": {
     "net8.0": [
       "Model >= 1.0.0",
+      "SharpZipLib >= 1.4.2",
       "Storage >= 1.0.0"
     ]
   },
@@ -1315,11 +1350,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
+      "projectUniqueName": "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
       "projectName": "TestConsole",
-      "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
+      "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
       "packagesPath": "C:\\Users\\jjkra\\.nuget\\packages\\",
-      "outputPath": "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\obj\\",
+      "outputPath": "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\jjkra\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -1337,8 +1372,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
-              "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj"
+            "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
+              "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj"
             },
             "D:\\VisualStudioProjects\\JjkWiki\\Storage\\Storage.csproj": {
               "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Storage\\Storage.csproj"
@@ -1360,6 +1395,12 @@
     "frameworks": {
       "net8.0": {
         "targetAlias": "net8.0",
+        "dependencies": {
+          "SharpZipLib": {
+            "target": "Package",
+            "version": "[1.4.2, )"
+          }
+        },
         "imports": [
           "net461",
           "net462",

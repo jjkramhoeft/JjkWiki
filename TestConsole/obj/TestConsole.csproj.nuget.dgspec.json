@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj": {}
+    "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj": {}
   },
   "projects": {
-    "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
+    "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj",
+        "projectUniqueName": "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj",
         "projectName": "Model",
-        "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj",
+        "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj",
         "packagesPath": "C:\\Users\\jjkra\\.nuget\\packages\\",
-        "outputPath": "d:\\VisualStudioProjects\\JjkWiki\\Model\\obj\\",
+        "outputPath": "D:\\VisualStudioProjects\\JjkWiki\\Model\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\jjkra\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -90,8 +90,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
-                "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj"
+              "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
+                "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj"
               }
             }
           }
@@ -136,14 +136,14 @@
         }
       }
     },
-    "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj": {
+    "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
+        "projectUniqueName": "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
         "projectName": "TestConsole",
-        "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
+        "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
         "packagesPath": "C:\\Users\\jjkra\\.nuget\\packages\\",
-        "outputPath": "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\obj\\",
+        "outputPath": "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\jjkra\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -161,8 +161,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
-                "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj"
+              "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
+                "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj"
               },
               "D:\\VisualStudioProjects\\JjkWiki\\Storage\\Storage.csproj": {
                 "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Storage\\Storage.csproj"
@@ -184,6 +184,12 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
+          "dependencies": {
+            "SharpZipLib": {
+              "target": "Package",
+              "version": "[1.4.2, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
