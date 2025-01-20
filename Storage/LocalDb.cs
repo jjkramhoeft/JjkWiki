@@ -18,6 +18,8 @@ namespace Storage
             command.ExecuteNonQuery();
             command.CommandText = LocalCreateTableSql.CleanPages;
             command.ExecuteNonQuery();
+            command.CommandText = LocalCreateTableSql.PageVectors;
+            command.ExecuteNonQuery();
         }
 
         public bool InsertPagesInfo(List<PageInfo> pagesInfo)
@@ -129,6 +131,36 @@ namespace Storage
             else
                 return false;
         }
+        
+        public bool InsertPageVectors(List<PageVector> pageVectors)
+        {
+            int count = 0;
+            using var connection = new SqliteConnection($"Data Source={_dbFullName}");
+            connection.Open();
+            using var transaction = connection.BeginTransaction();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO pageVectors (pageId,vector)
+                VALUES ($pageId,$vector) ";
+            var parameterId = command.CreateParameter();
+            parameterId.ParameterName = "$pageId";
+            command.Parameters.Add(parameterId);
+            var parameterVector = command.CreateParameter();
+            parameterVector.ParameterName = "$vector";
+            parameterVector.DbType = System.Data.DbType.Binary;
+            command.Parameters.Add(parameterVector);
+            foreach (var pageVector in pageVectors)
+            {
+                parameterId.Value = pageVector.PageId;
+                parameterVector.Value = pageVector.Blob;
+                count += command.ExecuteNonQuery();
+            }
+            transaction.Commit();
+            if (count == pageVectors.Count)
+                return true;
+            else
+                return false;
+        }
 
         public void TruncateCleanedPages()
         {
@@ -139,6 +171,18 @@ namespace Storage
             command.ExecuteNonQuery();
         }
 
+
+        public void TruncatePageVectors()
+        {
+            using var connection = new SqliteConnection($"Data Source={_dbFullName}");
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM pageVectors ";
+            command.ExecuteNonQuery();
+        }
+
+        
+
         public void Vacuum()
         {
             using var connection = new SqliteConnection($"Data Source={_dbFullName}");
@@ -146,6 +190,38 @@ namespace Storage
             var command = connection.CreateCommand();
             command.CommandText = "VACUUM; ";
             command.ExecuteNonQuery();
+        }
+
+        public string GetPageText(int pageId)
+        {
+            using var connection = new SqliteConnection($"Data Source={_dbFullName}");
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"SELECT text FROM cleanPages WHERE pageId = @pageId ";
+            command.Parameters.AddWithValue("@pageId", pageId);
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                string text = reader.GetString(0);
+                return text;
+            }
+            return "";
+        }
+
+        public List<int> GetAllUsedPageIds()
+        {
+           List<int> result = [];
+            using var connection = new SqliteConnection($"Data Source={_dbFullName}");
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"SELECT pageId FROM pageInfo WHERE used = 1 ";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(reader.GetInt32(0));
+            }
+            connection.Close();
+            return result;
         }
     }
 }

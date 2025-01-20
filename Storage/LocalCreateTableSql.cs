@@ -20,5 +20,11 @@ namespace Storage
             pageId INTEGER NOT NULL PRIMARY KEY,
             text TEXT NOT NULL
         );";
+
+        public const string PageVectors = @"
+        CREATE TABLE IF NOT EXISTS pageVectors (
+            pageId INTEGER NOT NULL PRIMARY KEY,
+            vector BLOB NOT NULL
+        );";
     }
 }

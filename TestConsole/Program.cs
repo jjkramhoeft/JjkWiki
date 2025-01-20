@@ -6,17 +6,19 @@ using System.Xml.Linq;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Globalization;
+using SmartComponents.LocalEmbeddings;
 
 LocalDb store = new("test-wiki");
 store.InitStore();
+var index = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream-index.txt";
+var dump = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream.xml.bz2";
 
-var action = Action.cleanPages;
+var action = Action.calcEmbeddings;
 
 if (action == Action.insertTitles)
 {
     Console.WriteLine("Insert Titles!");
     Stopwatch clock = new();
-    var index = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream-index.txt";
     var PageIndexStream = new FileStream(index, FileMode.Open);
     using var PageIndexStreamReader = new StreamReader(PageIndexStream);
     var line = string.Empty;
@@ -42,7 +44,6 @@ else if (action == Action.insertPageInfo)
     Stopwatch clockWriting = new();
     Stopwatch clockTotal = new();
     clockTotal.Start();
-    var index = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream-index.txt";
     clockIndexReading.Start();
     var PageIndexStream = new FileStream(index, FileMode.Open);
     using var PageIndexStreamReader = new StreamReader(PageIndexStream);
@@ -58,7 +59,6 @@ else if (action == Action.insertPageInfo)
     int blockCountTotal = blockStarts.Count;
     int blockCountCurrent = 0;
     List<PageInfo> pagesInfo = [];
-    var dump = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream.xml.bz2";
     using var dataDumpStream = new FileStream(dump, FileMode.Open);
     foreach (var byteStart in blockStarts)
     {
@@ -121,7 +121,7 @@ else if (action == Action.cleanPages)
     Console.WriteLine($"Got {pagesInfo.Count} pagesInfo in {(int)clockReadDb.Elapsed.TotalSeconds}(s)");
 
     Stopwatch clockReadWikiIndex = new();
-    var index = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream-index.txt";
+
     var PageIndexStream = new FileStream(index, FileMode.Open);
     using var PageIndexStreamReader = new StreamReader(PageIndexStream);
     var line = string.Empty;
@@ -172,11 +172,10 @@ else if (action == Action.cleanPages)
     //store.Vacuum();
 
     int count = 0;
-    var dump = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream.xml.bz2";
     using var dataDumpStream = new FileStream(dump, FileMode.Open);
     List<CleanPage> chunckOfPages = [];
-    
-    Stopwatch clockAll = new();    
+
+    Stopwatch clockAll = new();
     Stopwatch clockClean = new();
     clockAll.Start();
     foreach (var keyValuePair in res)
@@ -224,7 +223,7 @@ else if (action == Action.cleanPages)
 }
 else if (action == Action.testCleaning)
 {
-    List<string> testPages = TestData.TestPages;  
+    List<string> testPages = TestData.TestPages;
     int count = 0;
     foreach (var p in testPages)
     {
@@ -235,6 +234,60 @@ else if (action == Action.testCleaning)
         }
     }
     Console.WriteLine($"{count} runs.");
+}
+else if (action == Action.calcEmbeddings)
+{
+    Stopwatch clock = new();
+    Stopwatch clockInit = new();
+    Stopwatch clockCalc = new();
+    Stopwatch clockRead = new();
+    Stopwatch clockWrite = new();
+    clock.Start();
+    clockInit.Start();
+    Console.WriteLine("Calculate  Embedings!");
+    using var embedder = new LocalEmbedder(modelName: "default");
+    Console.WriteLine("Init.  LocalEmbedder!");
+    var pageIds = store.GetAllUsedPageIds();
+    Console.WriteLine($"Got {pageIds.Count} used pageIds");
+    store.TruncatePageVectors();
+    clockInit.Stop();
+    int count = 0;
+    foreach (var pageIdChunk in pageIds.Chunk(500))
+    {
+        List<PageVector> pageVectorList = [];
+        //List<string> textList = [];
+        List<PageText> pageList = [];
+        foreach (var pageId in pageIdChunk)
+        {
+            clockRead.Start();
+            string text = store.GetPageText(pageId);
+            pageList.Add(new(pageId,text));
+            clockRead.Stop();
+            count++;
+        }
+
+        clockCalc.Start();      
+        var embedRange = embedder.EmbedRange<PageText,EmbeddingI8>(pageList,p => p.Text);  //Persist via buffer - https://github.com/dotnet-smartcomponents/smartcomponents/blob/main/docs/local-embeddings.md   
+        foreach(var (Item, Embedding) in embedRange)
+            pageVectorList.Add(new(Item.PageId, Embedding.Buffer.ToArray()));    
+        clockCalc.Stop();
+
+        clockWrite.Start();
+        store.InsertPageVectors(pageVectorList);
+        clockWrite.Stop();
+        
+        double progres = count/pageIds.Count;
+        double timePrPage = clock.ElapsedMilliseconds/count;
+        double estTotalMinutes = timePrPage*pageIds.Count/60000.0;
+        Console.WriteLine(
+            $"Done {count}, Progres: {100*progres} %, "+
+            $"Init: {(int)clockInit.Elapsed.TotalSeconds} s, Read: {(int)clockRead.Elapsed.TotalSeconds} s, Calc: {(int)clockCalc.Elapsed.TotalSeconds} s, Write: {(int)clockWrite.Elapsed.TotalSeconds} s, "+
+            $"Estimated total minutes: {(int)estTotalMinutes}, Avg. sec. pr. page: {timePrPage} ms");
+        if (25000 < count)
+            break;
+    }
+    Console.WriteLine($"Done."); // at current perf it will take 18 hours for total eng wikipedia
+    clock.Stop();
 }
 else if (action == Action.none)
 {
@@ -820,14 +873,14 @@ string RemoveLinks(string text, string start, string end, char sep)
             int fittingSep = -1;
             foreach (var aSep in seps)
             {
-                if (removabels[count].Item1+2 < aSep && aSep < removabels[count].Item2)
+                if (removabels[count].Item1 + 2 < aSep && aSep < removabels[count].Item2)
                     fittingSep = aSep;
                 break;
             }
-            if(fittingSep==-1)
+            if (fittingSep == -1)
             {
                 //found no sep
-                fittingSep = removabels[count].Item2-1;
+                fittingSep = removabels[count].Item2 - 1;
             }
             //link to keep
             int linkToKeepStart = removabels[count].Item1 + 2;
@@ -862,10 +915,10 @@ class Page(int pageId, int dayNumber, long byteStart)
     public long ByteStart { get; set; } = byteStart;
 }
 
-class PageIndex(int pageId, long byteStart)
+class PageText(int pageId, string text)
 {
     public int PageId { get; set; } = pageId;
-    public long ByteStart { get; set; } = byteStart;
+    public string Text { get; set; } = text;
 }
 
 enum Action
@@ -874,13 +927,16 @@ enum Action
     cleanPages,
     testCleaning,
     insertTitles,
-    insertPageInfo
+    insertPageInfo,
+    calcEmbeddings
 }
+
 partial class Program
 {
     [GeneratedRegex(@"\({{[respell|IPA].+}}\)")]
     private static partial Regex MyRegex();
 }
+
 partial class Program
 {
     [GeneratedRegex(@"'{2,}")]
