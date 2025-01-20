@@ -14,7 +14,7 @@ namespace Storage
             var command = connection.CreateCommand();
             command.CommandText = LocalCreateTableSql.Titles;
             command.ExecuteNonQuery();
-            command.CommandText = LocalCreateTableSql.PageInfo;//ToDo rename to PagesInfo
+            command.CommandText = LocalCreateTableSql.PagesInfo;
             command.ExecuteNonQuery();
             command.CommandText = LocalCreateTableSql.CleanPages;
             command.ExecuteNonQuery();
@@ -30,7 +30,7 @@ namespace Storage
             using var transaction = connection.BeginTransaction();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO pageInfo (pageId,dayNumber,used)
+                INSERT INTO pagesInfo (pageId,dayNumber,used)
                 VALUES ($pageId,$dayNumber,$used) ";
             var parameterId = command.CreateParameter();
             parameterId.ParameterName = "$pageId";
@@ -90,7 +90,7 @@ namespace Storage
             using var connection = new SqliteConnection($"Data Source={_dbFullName}");
             connection.Open();
             using var command = connection.CreateCommand();
-            command.CommandText = @"SELECT pageId, dayNumber, used FROM pageInfo ";
+            command.CommandText = @"SELECT pageId, dayNumber, used FROM pagesInfo ";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {

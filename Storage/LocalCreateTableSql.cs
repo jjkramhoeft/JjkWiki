@@ -8,8 +8,8 @@ namespace Storage
             name TEXT NOT NULL
         );";
 
-        public const string PageInfo = @"
-        CREATE TABLE IF NOT EXISTS pageInfo (
+        public const string PagesInfo = @"
+        CREATE TABLE IF NOT EXISTS pagesInfo (
             pageId INTEGER NOT NULL PRIMARY KEY,
             dayNumber INTEGER NOT NULL,
             used INTEGER NOT NULL

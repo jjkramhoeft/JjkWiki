@@ -36,7 +36,7 @@ if (action == Action.insertTitles)
 }
 else if (action == Action.insertPageInfo)
 {
-    int maxReadAndParseSecs = 120000;
+    int maxReadAndParseSecs = 300;//120000;
     Console.WriteLine($"Insert PageInfo! (max run seconds {maxReadAndParseSecs})");
     Stopwatch clockIndexReading = new();
     Stopwatch clockDumpReading = new();
@@ -168,7 +168,7 @@ else if (action == Action.cleanPages)
     clockJoin.Stop();
     Console.WriteLine($"Joined {result.Count} together and sorted in {(int)clockJoin.Elapsed.TotalSeconds}(s)");
 
-    //store.TruncateCleanedPages();
+    store.TruncateCleanedPages();
     //store.Vacuum();
 
     int count = 0;
@@ -195,7 +195,7 @@ else if (action == Action.cleanPages)
                 var dateTag = pageElement?.Elements("revision").Elements("timestamp").First().Value ?? "";
                 var date = DateTime.Parse(dateTag);
                 var dayNumber = DateOnly.FromDateTime(date).DayNumber;
-                //var wikiPageType = pageElement?.Elements("ns").First().Value ?? "";  // we should be at an 0 or 4
+                var wikiPageType = pageElement?.Elements("ns").First().Value ?? "";  // we should be at an 0 or 4
                 var text = pageElement?.Elements("revision").Elements("text").First().Value ?? "";
                 //bool isRedirect = text.StartsWith("#Redirect", StringComparison.InvariantCultureIgnoreCase);  // we should not be at a redirect
                 clockClean.Start();
@@ -225,6 +225,9 @@ else if (action == Action.testCleaning)
 {
     List<string> testPages = TestData.TestPages;
     int count = 0;
+
+    var clean = Clean(testPages[2]);
+
     foreach (var p in testPages)
     {
         for (int i = 0; i < 1; i++)
@@ -255,38 +258,37 @@ else if (action == Action.calcEmbeddings)
     foreach (var pageIdChunk in pageIds.Chunk(500))
     {
         List<PageVector> pageVectorList = [];
-        //List<string> textList = [];
         List<PageText> pageList = [];
         foreach (var pageId in pageIdChunk)
         {
             clockRead.Start();
             string text = store.GetPageText(pageId);
-            pageList.Add(new(pageId,text));
+            pageList.Add(new(pageId, StartSection(text, 1000)));
             clockRead.Stop();
             count++;
         }
 
-        clockCalc.Start();      
-        var embedRange = embedder.EmbedRange<PageText,EmbeddingI8>(pageList,p => p.Text);  //Persist via buffer - https://github.com/dotnet-smartcomponents/smartcomponents/blob/main/docs/local-embeddings.md   
-        foreach(var (Item, Embedding) in embedRange)
-            pageVectorList.Add(new(Item.PageId, Embedding.Buffer.ToArray()));    
+        clockCalc.Start();
+        var embedRange = embedder.EmbedRange<PageText, EmbeddingI8>(pageList, p => p.Text);  //Persist via buffer - https://github.com/dotnet-smartcomponents/smartcomponents/blob/main/docs/local-embeddings.md   
+        foreach (var (Item, Embedding) in embedRange)
+            pageVectorList.Add(new(Item.PageId, Embedding.Buffer.ToArray()));
         clockCalc.Stop();
 
         clockWrite.Start();
         store.InsertPageVectors(pageVectorList);
         clockWrite.Stop();
-        
-        double progres = count/pageIds.Count;
-        double timePrPage = clock.ElapsedMilliseconds/count;
-        double estTotalMinutes = timePrPage*pageIds.Count/60000.0;
+
+        double progres = count / pageIds.Count;
+        double timePrPage = clock.ElapsedMilliseconds / count;
+        double estTotalMinutes = timePrPage * pageIds.Count / 60000.0;
         Console.WriteLine(
-            $"Done {count}, Progres: {100*progres} %, "+
-            $"Init: {(int)clockInit.Elapsed.TotalSeconds} s, Read: {(int)clockRead.Elapsed.TotalSeconds} s, Calc: {(int)clockCalc.Elapsed.TotalSeconds} s, Write: {(int)clockWrite.Elapsed.TotalSeconds} s, "+
+            $"Done {count}, Progres: {100 * progres} %, " +
+            $"Init: {(int)clockInit.Elapsed.TotalSeconds} s, Read: {(int)clockRead.Elapsed.TotalSeconds} s, Calc: {(int)clockCalc.Elapsed.TotalSeconds} s, Write: {(int)clockWrite.Elapsed.TotalSeconds} s, " +
             $"Estimated total minutes: {(int)estTotalMinutes}, Avg. sec. pr. page: {timePrPage} ms");
         if (25000 < count)
             break;
     }
-    Console.WriteLine($"Done."); // at current perf it will take 18 hours for total eng wikipedia
+    Console.WriteLine($"Done."); // at current perf it will take 6 hours for total eng wikipedia
     clock.Stop();
 }
 else if (action == Action.none)
@@ -300,30 +302,105 @@ else
     throw new Exception("Action not set!");
 }
 
+string StartSection(string text, int sectionLengt)
+{
+    int length = text.Length;
+    if (length <= sectionLengt)
+        return text;
+    int cut = sectionLengt * 2;
+    if (length < cut)
+        cut = length;
+    var cuttedText = text[..cut].ToCharArray();
+    bool useLong = true;
+    int i = 0;
+    for (i = 0; i < sectionLengt; i++)
+    {
+        if (cuttedText[sectionLengt - i] == '\n')
+        {
+            useLong = false;
+            break;
+        }
+        if (sectionLengt + i < length &&
+            cuttedText[sectionLengt + i] == '\n')
+            break;
+    }
+    if (useLong)
+        return text[..(sectionLengt + i)];
+    else
+        return text[..(sectionLengt - i)];
+}
+
 // Remove unwanted charactes from wiki page text, to make it more like human written plain text
 // (e.g. references, comments, links, tables, formatting ect.)
 string Clean(string rawtext)
 {
-    string text = CutOff(rawtext);
-    //clean per line
-    var lines = text.Split('\n');
-    StringBuilder newText = new();
-    foreach (var currentLine in lines)
-    {
-        var line = RemoveFromTo(currentLine, "<!--", "-->");
-        line = MyRegex().Replace(line, "");
-        line = MyRegex1().Replace(line, "");
-        line = RemoveFromTo(line, "{{", "}}");
-        line = RemoveLinks(line, "[[", "]]", '|');// keep only first
-        line = RemoveHeadingStyles(line);
-        newText.Append(line);
-    }
-    text = RemoveTagsAndContent(newText.ToString(), "ref");
-    text = RemoveTagsAndContent(text, "gallery");
+    char[] text = CutOff(rawtext);
+    text = CleanChars(text);
     text = RemoveFromTo(text, "{{", "}}");
     text = RemoveFromTo(text, "{|", "|}");//Skip all tables   
-    text = MultiTrim(text);
-    return text;
+    text = RemoveFromTo(text, "<!--", "-->");
+    //clean per line
+    List<List<char>> lines = SplitInLines(text);
+    List<char> newText = [];
+    foreach (var currentLine in lines)
+    {
+        var lineAsString = MyRegex().Replace(new string([.. currentLine]), "");
+        lineAsString = MyRegex1().Replace(lineAsString, "");
+        var line = RemoveFromTo(lineAsString.ToCharArray(), "{{", "}}");
+        line = RemoveLinks(line, "[[", "]]", '|');// keep only first
+        line = RemoveHeadingStyles(line);
+        newText.AddRange(line);
+    }
+    text = RemoveTagsAndContent(newText.ToArray(), "ref");
+    text = RemoveTagsAndContent(text, "gallery");
+    text = FixBrackets(text);
+    return MultiTrim(text);
+}
+
+List<List<char>> SplitInLines(char[] text)
+{
+    List<List<char>> result = [];
+    List<char> line = [];
+    foreach (var c in text)
+    {
+        if (c == '\n')
+        {
+            result.Add(line);
+            line = [];
+        }
+        else
+            line.Add(c);
+    }
+    return result;
+}
+
+char[] CleanChars(char[] text)
+{
+    List<char> result = [];
+    foreach (var c in text)
+    {
+        if (c == '\r')
+            continue;
+        else
+        {
+            UnicodeCategory category = Char.GetUnicodeCategory(c);
+            switch (category)
+            {
+                case UnicodeCategory.LowercaseLetter:
+                case UnicodeCategory.UppercaseLetter:
+                case UnicodeCategory.TitlecaseLetter:
+                case UnicodeCategory.ModifierLetter:
+                case UnicodeCategory.OtherLetter:
+                    if (c <= '\u03FF')
+                        result.Add(c);
+                    break;
+                default:
+                    result.Add(c);
+                    break;
+            }
+        }
+    }
+    return [.. result];
 }
 
 // Only allow single '
@@ -337,9 +414,8 @@ string Clean(string rawtext)
 // &nbsp; => space
 // &mdash; => -
 // <br /> => \n
-string MultiTrim(string text)
+string MultiTrim(char[] chars)
 {
-    var chars = text.ToCharArray();
     var length = chars.Length;
 
     Dictionary<string, char?> replaceDict = [];
@@ -490,9 +566,70 @@ string MultiTrim(string text)
     return result.TrimEnd(' ', '\r', '\n');
 }
 
-string RemoveFromTo(string text, string from, string to)
+char[] FixBrackets(char[] chars)
 {
-    var chars = text.ToCharArray();
+    List<char> result = [];
+    int length = chars.Length;
+    bool bracketStarted = false;
+    bool bracketGotContent = false;
+    for (int i = 0; i < length; i++)
+    {
+        if (chars[i] == '(')
+        {
+            bracketStarted = true;
+            bracketGotContent = false;
+            continue;
+        }
+        else if (chars[i] == ')')
+        {
+            if(bracketStarted)
+            {
+                bracketStarted=false;
+                continue;
+            }
+            int testI = i - 1;
+            while (chars[testI] == ' ' && 1 < testI)
+            {
+                result.RemoveAt(result.Count - 1);
+                testI--;
+            }
+            result.Add(')');
+            bracketStarted = false;
+            bracketGotContent = false;
+            continue;
+        }
+        else
+        {
+            if (bracketStarted)
+            {
+                if (chars[i] == ' ' ||
+                chars[i] == ',' ||
+                chars[i] == '.' ||
+                chars[i] == ':' ||
+                chars[i] == '\n' ||
+                chars[i] == ';')
+                {
+                    //skip
+                }
+                else
+                {
+                    result.Add('(');
+                    result.Add(chars[i]);
+                    bracketGotContent = true;
+                    bracketStarted = false;
+                }
+            }
+            else
+            {
+                result.Add(chars[i]);
+            }
+        }
+    }
+    return [.. result];
+}
+
+char[] RemoveFromTo(char[] chars, string from, string to)
+{
     var length = chars.Length;
 
     char[] tagStartChars = from.ToCharArray();
@@ -518,6 +655,7 @@ string RemoveFromTo(string text, string from, string to)
                 matchingStartCount = 0;
                 if (currentStartIndex == -1)
                     currentStartIndex = current - tagStartChars.Length + 1;
+                current++;
             }
         }
         else if (0 < matchingStartCount)
@@ -554,10 +692,10 @@ string RemoveFromTo(string text, string from, string to)
     }
 
     if (removabels.Count == 0)
-        return text;
+        return chars;
 
     int count = 0;
-    StringBuilder sb = new();
+    List<char> result = [];
 
     for (int i = 0; i < length; i++)
     {
@@ -569,17 +707,17 @@ string RemoveFromTo(string text, string from, string to)
                 count++;
         }
         else
-            sb.Append(chars[i]);
+            result.Add(chars[i]);
     }
-    string result = sb.ToString();
-    return result;
+    return [.. result];
 }
 
-string RemoveTagsAndContent(string text, string tagName)
+char[] RemoveTagsAndContent(char[] chars, string tagName)
 {
-    var chars = text.ToCharArray();
-    var lowerChars = text.ToLower().ToArray();
     var length = chars.Length;
+    char[] lowerChars = new char[length];
+    for (int j = 0; j < length; j++)
+        lowerChars[j] = char.ToLower(chars[j]);
 
     char[] tagStartChars = new char[tagName.Length + 1];
     tagStartChars[0] = '<';
@@ -681,10 +819,10 @@ string RemoveTagsAndContent(string text, string tagName)
     }
 
     if (removabels.Count == 0)
-        return text;
+        return chars;
 
     int count = 0;
-    StringBuilder sb = new();
+    List<char> result = [];
 
     for (i = 0; i < length; i++)
     {
@@ -696,13 +834,12 @@ string RemoveTagsAndContent(string text, string tagName)
                 count++;
         }
         else
-            sb.Append(chars[i]);
+            result.Add(chars[i]);
     }
-    string result = sb.ToString();
-    return result;
+    return result.ToArray();
 }
 
-string CutOff(string text)
+char[] CutOff(string text)
 {
     string[] candidates = [
         "{{reflist",
@@ -762,22 +899,15 @@ string CutOff(string text)
         }
     }
     if (cutOffIndex == -1)
-        return text;// Did not find a macthing cut off
+        return text.ToCharArray();// Did not find a macthing cut off
     else
-    {
-        var chars = text.ToArray();
-        StringBuilder sb = new();
-        for (i = 0; i < cutOffIndex; i++)
-        {
-            sb.Append(chars[i]);
-        }
-        return sb.ToString();
-    }
+        return text.ToArray()[..cutOffIndex];
 }
 
-string RemoveHeadingStyles(string text)
+char[] RemoveHeadingStyles(char[] text)
 {
-    var lines = text.Split('\n');
+    string all = new(text);
+    var lines = all.Split('\n');
     StringBuilder result = new();
     foreach (var line in lines)
     {
@@ -787,13 +917,15 @@ string RemoveHeadingStyles(string text)
         else
             result.Append(trimed + '\n');
     }
-    return result.ToString();
+    return result.ToString().ToCharArray();
 }
 
-string RemoveLinks(string text, string start, string end, char sep)
+char[] RemoveLinks(char[] chars, string start, string end, char sep)
 {
-    var chars = text.ToCharArray();
+    string debug = new(chars);
     var length = chars.Length;
+    if (length == 0)
+        return chars;
 
     char[] tagStartChars = start.ToCharArray();
     char[] tagEndChars = end.ToCharArray();
@@ -860,10 +992,10 @@ string RemoveLinks(string text, string start, string end, char sep)
     }
 
     if (removabels.Count == 0)
-        return text;
+        return chars;
 
     int count = 0;
-    StringBuilder sb = new();
+    List<char> result = [];
     for (int i = 0; i < length; i++)
     {
         if (count < removabels.Count &&
@@ -874,8 +1006,10 @@ string RemoveLinks(string text, string start, string end, char sep)
             foreach (var aSep in seps)
             {
                 if (removabels[count].Item1 + 2 < aSep && aSep < removabels[count].Item2)
+                {
                     fittingSep = aSep;
-                break;
+                    break;
+                }
             }
             if (fittingSep == -1)
             {
@@ -891,9 +1025,21 @@ string RemoveLinks(string text, string start, string end, char sep)
             }
             else
             {
+                List<char> link = [];
                 for (int l = linkToKeepStart; l <= linkToKeepEnd; l++)
+                    link.Add(chars[l]);
+                if (link.Count > 4 &&
+                    (link[0] == 'f' || link[0] == 'F') &&
+                    (link[1] == 'i' || link[1] == 'I') &&
+                    (link[2] == 'l' || link[2] == 'L') &&
+                    (link[3] == 'e' || link[3] == 'E') &&
+                    (link[4] == ':'))
                 {
-                    sb.Append(chars[l]);
+                    //skip
+                }
+                else
+                {
+                    result.AddRange(link);
                 }
             }
             //jump to end and continue
@@ -902,10 +1048,9 @@ string RemoveLinks(string text, string start, string end, char sep)
             continue;
         }
         else
-            sb.Append(chars[i]);
+            result.Add(chars[i]);
     }
-    string result = sb.ToString();
-    return result;
+    return result.ToArray();
 }
 
 class Page(int pageId, int dayNumber, long byteStart)
