@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {}
+    "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {}
   },
   "projects": {
-    "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
+    "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj",
+        "projectUniqueName": "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj",
         "projectName": "Model",
-        "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj",
+        "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj",
         "packagesPath": "C:\\Users\\jjkra\\.nuget\\packages\\",
-        "outputPath": "D:\\VisualStudioProjects\\JjkWiki\\Model\\obj\\",
+        "outputPath": "d:\\VisualStudioProjects\\JjkWiki\\Model\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\jjkra\\AppData\\Roaming\\NuGet\\NuGet.Config",

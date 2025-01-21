@@ -1296,11 +1296,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\VisualStudioProjects\\JjkWiki\\Storage\\Storage.csproj",
+      "projectUniqueName": "d:\\VisualStudioProjects\\JjkWiki\\Storage\\Storage.csproj",
       "projectName": "Storage",
-      "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Storage\\Storage.csproj",
+      "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\Storage\\Storage.csproj",
       "packagesPath": "C:\\Users\\jjkra\\.nuget\\packages\\",
-      "outputPath": "D:\\VisualStudioProjects\\JjkWiki\\Storage\\obj\\",
+      "outputPath": "d:\\VisualStudioProjects\\JjkWiki\\Storage\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\jjkra\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -1318,8 +1318,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
-              "projectPath": "D:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj"
+            "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj": {
+              "projectPath": "d:\\VisualStudioProjects\\JjkWiki\\Model\\Model.csproj"
             }
           }
         }
