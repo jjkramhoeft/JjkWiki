@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ZTwUkmyTpzg=",
+  "dgSpecHash": "BS822b1AYOI=",
   "success": true,
-  "projectFilePath": "d:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
+  "projectFilePath": "D:\\VisualStudioProjects\\JjkWiki\\TestConsole\\TestConsole.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\jjkra\\.nuget\\packages\\fastberttokenizer\\0.4.67\\fastberttokenizer.0.4.67.nupkg.sha512",
     "C:\\Users\\jjkra\\.nuget\\packages\\microsoft.data.sqlite.core\\9.0.1\\microsoft.data.sqlite.core.9.0.1.nupkg.sha512",

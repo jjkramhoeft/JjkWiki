@@ -1,10 +1,18 @@
 # JJK Private Wikipedia
 
-My (Jens Jakob Kramhøft) experiment with a personal encyclopedia with search powered by LLM embedings
+My (Jens Jakob Kramhøft) experiment with a personal encyclopedia with search powered by LLM embeddings
 
-Wikipedia dump files are not included in GitHub
+Wikipedia dump files are not included in GitHub, I used the full english monthly xml dump files
 
-The full English monthly xml dump of filewikipedia will be trimmed, cleaned and indexed
+The monthly xml dump of filewikipedia are trimmed, cleaned and indexed using vector embeddings from an LLM.
+
+## Performence
+
+After some light optimazition (apx. 10 hours.) the cleaning is down to 6 hours and indexing is another 6 hours. Then all can be loaded in memory in 12 seconds and a search for the 10 best matching wiki posts takes apx. 400 ms. 8.5 millions wikipages was used (all redirects was skipped)
+
+## Effort
+
+Most of the effort went in to cleaning the internal wiki page xml format to something that more resembles plain text, while keeping the cleaning fast. String handling had to be done with char arrays and string builder to a large extend.
 
 ## Layout Of Wikipidea Dump Files
 
