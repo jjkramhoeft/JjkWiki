@@ -1,5 +1,6 @@
 using Model;
 using Microsoft.Data.Sqlite;
+using System.Numerics;
 
 namespace Storage
 {
@@ -210,7 +211,7 @@ namespace Storage
 
         public List<int> GetAllUsedPageIds()
         {
-           List<int> result = [];
+            List<int> result = [];
             using var connection = new SqliteConnection($"Data Source={_dbFullName}");
             connection.Open();
             using var command = connection.CreateCommand();
@@ -219,6 +220,46 @@ namespace Storage
             while (reader.Read())
             {
                 result.Add(reader.GetInt32(0));
+            }
+            connection.Close();
+            return result;
+        }
+
+        public List<Title> GetAllUsedTitles()
+        {
+            List<Title> result = [];
+            using var connection = new SqliteConnection($"Data Source={_dbFullName}");
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+            SELECT titles.pageId, titles.name FROM titles 
+            inner join pagesInfo on pagesInfo.PageId = titles.pageId
+            WHERE pagesInfo.used = 1 ";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new(
+                    reader.GetInt32(0),
+                    reader.GetString(1)));
+            }
+            connection.Close();
+            return result;
+        }
+
+        public List<PageVector> GetAllVectors()
+        {
+            List<PageVector> result = [];
+            using var connection = new SqliteConnection($"Data Source={_dbFullName}");
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+            SELECT pageId, vector FROM pageVectors  ";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                result.Add(new(
+                    reader.GetInt32(0),
+                    (byte[])reader["Vector"]));
             }
             connection.Close();
             return result;

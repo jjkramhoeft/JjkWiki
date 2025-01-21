@@ -12,6 +12,8 @@ namespace Storage
         public bool InsertPageVectors(List<PageVector> pageVectors);
         public List<PageInfo> GetAllPagesInfo();
         public List<int> GetAllUsedPageIds();
+        public List<Title> GetAllUsedTitles();
+        public List<PageVector> GetAllVectors();
         public void TruncateCleanedPages();
         public void TruncatePageVectors();
         public void Vacuum();

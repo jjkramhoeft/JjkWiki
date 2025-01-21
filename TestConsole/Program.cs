@@ -13,7 +13,7 @@ store.InitStore();
 var index = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream-index.txt";
 var dump = @"E:\WikiDump20241220\enwiki-20241220-pages-articles-multistream.xml.bz2";
 
-var action = Action.calcEmbeddings;
+var action = Action.testSearch;
 
 if (action == Action.insertTitles)
 {
@@ -253,7 +253,7 @@ else if (action == Action.calcEmbeddings)
     Console.WriteLine("Init.  LocalEmbedder!");
     var pageIds = store.GetAllUsedPageIds();
     Console.WriteLine($"Got {pageIds.Count} used pageIds");
-    store.TruncatePageVectors();
+    //store.TruncatePageVectors();
     clockInit.Stop();
     int count = 0;
     foreach (var pageIdChunk in pageIds.Chunk(1000))
@@ -290,6 +290,39 @@ else if (action == Action.calcEmbeddings)
     }
     Console.WriteLine($"Done."); // at current perf it will take 6 hours for total eng wikipedia
     clock.Stop();
+}
+else if (action == Action.testSearch)
+{
+    Console.WriteLine("Load Embeddings!");
+    Stopwatch clockInit = new();
+    Stopwatch clockSearch = new();
+    clockInit.Start();
+    var titles = store.GetAllUsedTitles();
+    using var embedder = new LocalEmbedder(modelName: "default");
+    var vectorsAsBlobs = store.GetAllVectors();
+    List<PageWithVector> vectors =[];  
+    foreach(var b in vectorsAsBlobs)
+        vectors.Add(new(b.PageId,new EmbeddingI8(b.Blob)));
+    clockInit.Stop();
+    Console.WriteLine($"Init time: {clockInit.ElapsedMilliseconds}(ms)");
+    var queryText = "a famous bridge that swayed and bent in the wind and then collapsed, there is a movie clip of the collapse";
+    while(!string.IsNullOrWhiteSpace(queryText) && !queryText.Equals("quit"))
+    {
+        var query = embedder.Embed<EmbeddingI8>(queryText); 
+        clockSearch.Restart();
+        var results = LocalEmbedder.FindClosestWithScore(query, vectors.Select(item => (item, item.Vector)), 10);
+        clockSearch.Stop();
+        Console.WriteLine($"Init time: {clockInit.ElapsedMilliseconds}(ms) Search time: {clockSearch.ElapsedMilliseconds}(ms)");
+        int count=0;
+        foreach(var r in results)
+        {
+            count++;
+            var title = titles.Where(t=>t.PageId==r.Item.PageId).First();
+            Console.WriteLine($"Result {count}. '{title?.Name}' pageId:{r.Item.PageId} score:{r.Similarity} url: https://en.wikipedia.org/wiki/{title?.Name?.Replace(' ','_')}");
+        }
+        queryText = Console.ReadLine();
+    }
+
 }
 else if (action == Action.none)
 {
@@ -1070,6 +1103,12 @@ class PageText(int pageId, string text)
     public string Text { get; set; } = text;
 }
 
+class PageWithVector(int pageId, EmbeddingI8 vector)
+{
+    public int PageId { get; set; } = pageId;
+    public EmbeddingI8 Vector { get; set; } = vector;
+}
+
 enum Action
 {
     none,
@@ -1077,7 +1116,8 @@ enum Action
     testCleaning,
     insertTitles,
     insertPageInfo,
-    calcEmbeddings
+    calcEmbeddings,
+    testSearch
 }
 
 partial class Program
