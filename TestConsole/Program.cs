@@ -312,14 +312,17 @@ else if (action == Action.testSearch)
         clockSearch.Restart();
         var results = LocalEmbedder.FindClosestWithScore(query, vectors.Select(item => (item, item.Vector)), 10);
         clockSearch.Stop();
-        Console.WriteLine($"Init time: {clockInit.ElapsedMilliseconds}(ms) Search time: {clockSearch.ElapsedMilliseconds}(ms)");
+        Console.WriteLine($"Searching for: {queryText}");
+        Console.WriteLine($"Search time: {clockSearch.ElapsedMilliseconds}(ms)");
         int count=0;
         foreach(var r in results)
         {
             count++;
             var title = titles.Where(t=>t.PageId==r.Item.PageId).First();
-            Console.WriteLine($"Result {count}. '{title?.Name}' pageId:{r.Item.PageId} score:{r.Similarity} url: https://en.wikipedia.org/wiki/{title?.Name?.Replace(' ','_')}");
+            Console.WriteLine($"Result #{count}. '{title?.Name}'  Score:{(int)(100.0*r.Similarity)}% url: 'https://en.wikipedia.org/wiki/{title?.Name?.Replace(' ','_')}'");
         }
+        Console.WriteLine();
+        Console.WriteLine("Search again?");
         queryText = Console.ReadLine();
     }
 
