@@ -36,7 +36,7 @@ if (action == Action.insertTitles)
 }
 else if (action == Action.insertPageInfo)
 {
-    int maxReadAndParseSecs = 300;//120000;
+    int maxReadAndParseSecs = 120000;
     Console.WriteLine($"Insert PageInfo! (max run seconds {maxReadAndParseSecs})");
     Stopwatch clockIndexReading = new();
     Stopwatch clockDumpReading = new();
@@ -195,7 +195,7 @@ else if (action == Action.cleanPages)
                 var dateTag = pageElement?.Elements("revision").Elements("timestamp").First().Value ?? "";
                 var date = DateTime.Parse(dateTag);
                 var dayNumber = DateOnly.FromDateTime(date).DayNumber;
-                var wikiPageType = pageElement?.Elements("ns").First().Value ?? "";  // we should be at an 0 or 4
+                //var wikiPageType = pageElement?.Elements("ns").First().Value ?? "";  // we should be at an 0 or 4
                 var text = pageElement?.Elements("revision").Elements("text").First().Value ?? "";
                 //bool isRedirect = text.StartsWith("#Redirect", StringComparison.InvariantCultureIgnoreCase);  // we should not be at a redirect
                 clockClean.Start();
@@ -226,7 +226,7 @@ else if (action == Action.testCleaning)
     List<string> testPages = TestData.TestPages;
     int count = 0;
 
-    var clean = Clean(testPages[2]);
+    //var clean = Clean(testPages[2]);
 
     foreach (var p in testPages)
     {
@@ -245,6 +245,7 @@ else if (action == Action.calcEmbeddings)
     Stopwatch clockCalc = new();
     Stopwatch clockRead = new();
     Stopwatch clockWrite = new();
+    //store.Vacuum();
     clock.Start();
     clockInit.Start();
     Console.WriteLine("Calculate  Embedings!");
@@ -255,7 +256,7 @@ else if (action == Action.calcEmbeddings)
     store.TruncatePageVectors();
     clockInit.Stop();
     int count = 0;
-    foreach (var pageIdChunk in pageIds.Chunk(500))
+    foreach (var pageIdChunk in pageIds.Chunk(1000))
     {
         List<PageVector> pageVectorList = [];
         List<PageText> pageList = [];
@@ -278,15 +279,14 @@ else if (action == Action.calcEmbeddings)
         store.InsertPageVectors(pageVectorList);
         clockWrite.Stop();
 
-        double progres = count / pageIds.Count;
+        double progres = 100.0 * count / pageIds.Count;
         double timePrPage = clock.ElapsedMilliseconds / count;
         double estTotalMinutes = timePrPage * pageIds.Count / 60000.0;
         Console.WriteLine(
-            $"Done {count}, Progres: {100 * progres} %, " +
+            $"Done {count}, Progres: {(int)progres} %, " +
             $"Init: {(int)clockInit.Elapsed.TotalSeconds} s, Read: {(int)clockRead.Elapsed.TotalSeconds} s, Calc: {(int)clockCalc.Elapsed.TotalSeconds} s, Write: {(int)clockWrite.Elapsed.TotalSeconds} s, " +
             $"Estimated total minutes: {(int)estTotalMinutes}, Avg. sec. pr. page: {timePrPage} ms");
-        if (25000 < count)
-            break;
+        //if (25000 < count)       break;
     }
     Console.WriteLine($"Done."); // at current perf it will take 6 hours for total eng wikipedia
     clock.Stop();
@@ -311,23 +311,29 @@ string StartSection(string text, int sectionLengt)
     if (length < cut)
         cut = length;
     var cuttedText = text[..cut].ToCharArray();
-    bool useLong = true;
+    bool useShort = false;
+    bool useLong = false;
     int i = 0;
     for (i = 0; i < sectionLengt; i++)
     {
         if (cuttedText[sectionLengt - i] == '\n')
         {
-            useLong = false;
+            useShort = true;
             break;
         }
-        if (sectionLengt + i < length &&
+        if (sectionLengt + i + 1 < length &&
             cuttedText[sectionLengt + i] == '\n')
+        {
+            useLong = true;
             break;
+        }
     }
     if (useLong)
         return text[..(sectionLengt + i)];
-    else
+    else if(useShort)
         return text[..(sectionLengt - i)];
+    else
+        return text;
 }
 
 // Remove unwanted charactes from wiki page text, to make it more like human written plain text
@@ -467,24 +473,24 @@ string MultiTrim(char[] chars)
         }
 
         // All multi space => single space
-        if (chars[current] == ' ' && 0 < left && chars[current + 1] == ' ')
+        if (chars[current] == ' ' && 1 < left && chars[current + 1] == ' ')
             continue;
 
         // All multi , => single ,
-        if (chars[current] == ',' && 0 < left && chars[current + 1] == ',')
+        if (chars[current] == ',' && 1 < left && chars[current + 1] == ',')
             continue;
 
         // Never space before ,
-        if (chars[current] == ' ' && 0 < left && chars[current + 1] == ',')
+        if (chars[current] == ' ' && 1 < left && chars[current + 1] == ',')
             continue;
 
         // No spaces in start of lines
         if (chars[current] == ' ' && 0 < current && chars[current - 1] == '\n')
             continue;
         // No spaces at end of lines
-        if (chars[current] == ' ' && 0 < left && chars[current + 1] == '\n')
+        if (chars[current] == ' ' && 1 < left && chars[current + 1] == '\n')
             continue;
-        if (chars[current] == ' ' && 1 < left && chars[current + 1] == ' ' && chars[current + 1] == '\n')
+        if (chars[current] == ' ' && 2 < left && chars[current + 1] == ' ' && chars[current + 2] == '\n')
         {
             current++;
             continue;
@@ -571,31 +577,28 @@ char[] FixBrackets(char[] chars)
     List<char> result = [];
     int length = chars.Length;
     bool bracketStarted = false;
-    bool bracketGotContent = false;
     for (int i = 0; i < length; i++)
     {
         if (chars[i] == '(')
         {
             bracketStarted = true;
-            bracketGotContent = false;
             continue;
         }
         else if (chars[i] == ')')
         {
-            if(bracketStarted)
+            if (bracketStarted)
             {
-                bracketStarted=false;
+                bracketStarted = false;
                 continue;
             }
             int testI = i - 1;
-            while (chars[testI] == ' ' && 1 < testI)
+            while (1 < testI && chars[testI] == ' ')
             {
                 result.RemoveAt(result.Count - 1);
                 testI--;
             }
             result.Add(')');
             bracketStarted = false;
-            bracketGotContent = false;
             continue;
         }
         else
@@ -615,7 +618,6 @@ char[] FixBrackets(char[] chars)
                 {
                     result.Add('(');
                     result.Add(chars[i]);
-                    bracketGotContent = true;
                     bracketStarted = false;
                 }
             }
@@ -656,6 +658,8 @@ char[] RemoveFromTo(char[] chars, string from, string to)
                 if (currentStartIndex == -1)
                     currentStartIndex = current - tagStartChars.Length + 1;
                 current++;
+                if (length <= current)
+                    continue;
             }
         }
         else if (0 < matchingStartCount)

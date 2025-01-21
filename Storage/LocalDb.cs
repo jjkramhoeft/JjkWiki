@@ -214,7 +214,7 @@ namespace Storage
             using var connection = new SqliteConnection($"Data Source={_dbFullName}");
             connection.Open();
             using var command = connection.CreateCommand();
-            command.CommandText = @"SELECT pageId FROM pageInfo WHERE used = 1 ";
+            command.CommandText = @"SELECT pageId FROM pagesInfo WHERE used = 1 ";
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
